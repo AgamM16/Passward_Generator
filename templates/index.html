@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1, h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            transition: border-color 0.3s ease-in-out;
+            width: 80%;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #passwordLabel {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+            transition: color 0.3s ease-in-out;
+        }
+
+        #passwordStrength {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        #historySection {
+            text-align: center;
+        }
+
+        #historyList {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        #historyList li {
+            background-color: #eee;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        #historyList li:hover {
+            background-color: #ddd;
+        }
+
+        .icon {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+
+        .copy-icon {
+            cursor: pointer;
+            color: #4CAF50;
+            transition: color 0.3s ease-in-out;
+        }
+
+        .copy-icon:hover {
+            color: #45a049;
+        }
+
+        /* Add more styles and animations as needed */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Password Generator</h1>
+        <form id="passwordForm">
+            <label for="length">Enter the desired length for the password:</label>
+            <br>
+            <input type="number" id="length" name="length" required>
+            <br>
+            <button type="button" onclick="generatePassword()">Generate Password</button>
+        </form>
+        <p id="passwordLabel"></p>
+
+        <div id="historySection">
+            <h2>Password History</h2>
+            <ul id="historyList">
+                <!-- Password history will be dynamically populated here -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Function to generate a password
+        function generatePassword() {
+            const length = document.getElementById("length").value;
+            // Assuming your server endpoint is '/generate_password'
+            fetch('/generate_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `length=${length}`,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    displayGeneratedPassword(data.password);
+                    updateHistoryList(data.password);
+                    showHistory();
+                }
+            });
+        }
+
+        // Function to display the generated password
+        function displayGeneratedPassword(password) {
+            const passwordLabel = document.getElementById("passwordLabel");
+            passwordLabel.innerHTML = `<strong>Generated Password:</strong> ${password} <span class="copy-icon" onclick="copyToClipboard('${password}')">&#128203;</span>`;
+        }
+
+        // Function to show the password history
+        function showHistory() {
+            const historySection = document.getElementById("historySection");
+            historySection.style.display = 'block';
+
+            // Assuming your server endpoint is '/history'
+            fetch('/history')
+                .then(response => response.json())
+                .then(data => {
+                    const historyList = document.getElementById("historyList");
+                    historyList.innerHTML = "";  // Clear existing history
+                    data.history.forEach(password => {
+                        const listItem = createHistoryListItem(password);
+                        historyList.appendChild(listItem);
+                    });
+                });
+        }
+
+        // Function to update the password history list
+        function updateHistoryList(password) {
+            const historyList = document.getElementById("historyList");
+            const listItem = createHistoryListItem(password);
+            historyList.insertBefore(listItem, historyList.firstChild);
+        }
+
+        // Function to create an item for the password history list
+        function createHistoryListItem(password) {
+            const listItem = document.createElement("li");
+            listItem.innerHTML = `<span class="icon">&#128273;</span>${password} <span class="copy-icon" onclick="copyToClipboard('${password}')">&#128203;</span>`;
+            return listItem;
+        }
+
+        // Function to copy a text to the clipboard
+        function copyToClipboard(text) {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert("Password copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
